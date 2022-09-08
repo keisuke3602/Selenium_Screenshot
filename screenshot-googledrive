@@ -1,0 +1,73 @@
+!apt-get update
+!apt install chromium-chromedriver
+!cp /usr/lib/chromium-browser/chromedriver /usr/bin
+!pip install  selenium
+
+from google.colab import files
+import time
+import shutil
+import os
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+options = webdriver.ChromeOptions()
+options.headless = True
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
+driver = webdriver.Chrome('chromedriver',options=options)
+driver.implicitly_wait(10)
+
+
+#connect to google spreadsheet and get values.
+#!pip install --upgrade -q gspread
+import gspread
+import pandas as pd
+
+from google.colab import auth
+auth.authenticate_user()
+
+from google.auth import default
+
+creds,_=default()
+
+gc = gspread.authorize(creds)
+
+worksheet = gc.open_by_key('Your spreadsheet's key')
+st = worksheet.worksheet("You sheet name")
+
+
+# take a screenshot and save it on google colaboraty with name
+urls = st.col_values(1)
+screenname = st.col_values(2)
+result = 0
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+windowSizeWidth = 1400
+windowSizeHeight = 900
+
+for url, i in zip(urls, screenname):
+
+  driver.get(url)
+  WebDriverWait(driver, 15).until(EC.presence_of_all_elements_located)
+
+  windowWidth = windowSizeWidth if windowSizeWidth else driver.execute_script('return document.body.scrollWidth;')
+  windowHeight = windowSizeHeight if windowSizeHeight else driver.execute_script('return document.body.scrollHeight;')
+  driver.set_window_size(windowWidth, windowHeight)
+
+  #driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+
+  time.sleep(5)
+
+  driver.save_screenshot('/content/drive/MyDrive/SS_test/' + screenname[result])
+  result += 1
+
+  time.sleep(1)
+
+driver.quit()
+
